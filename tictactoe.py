@@ -51,7 +51,7 @@ class Game(ABC, Generic[CommandType]):
 class TicTacToeBoard(Game):
     def __init__(self) -> None:
         self._board = [[Empty() for _ in range(3)] for _ in range(3)]
-        self._done = False
+        self._winner = None
 
     @property
     def _rows(self) -> Iterable[list[Tile]]:
@@ -86,27 +86,35 @@ class TicTacToeBoard(Game):
         return None
 
     def mark_tile(self, command: TicTacToeCommand) -> None:
-        if self._done:
+        if self._winner is not None:
             return
         self._board[command.x][command.y] = command.tile
 
     def _determine_triple_winner(self, triple: tuple[Tile, Tile, Tile]) -> Tile:
+        if self._winner is not None:
+            return self._winner
         if len(set(triple)) == 1:
             return next(iter(triple))
         return Empty()
 
     def __str__(self) -> str:
-        return '\n'.join(
+        board = '\n'.join(
             ''.join(tile.to_string() for tile in row) 
             for row in self._rows
         )
+        if self._winner is not None:
+            winner_line = f'\n{self._winner.to_string()} wins!'
+        else:
+            winner_line = ''
+        return board + winner_line
 
     def main_loop(self) -> Generator[str, CommandType, None]:
         while True:
             command = yield str(self)
             self.mark_tile(command)
-            if isinstance(self.determine_winner(), (Naught, Cross)):
-                self._done = True
+            winner = self.determine_winner()
+            if isinstance(winner, (Naught, Cross)):
+                self._winner = winner
 
 
 def test_determine_winner_on_empty_board():
@@ -225,6 +233,13 @@ def test_that_the_board_prints_nicely() -> None:
     board.mark_tile(1, 1, Naught())
     assert str(board) == 'ox.\n.o.\n...'
 
+def test_that_the_board_prints_nicely() -> None:
+    board = TestAdapter(TicTacToeBoard())
+    board.mark_tile(1, 0, Naught())
+    board.mark_tile(1, 2, Naught())
+    board.mark_tile(1, 1, Naught())
+    assert 'o wins!' in str(board)
+
 def print_board(board: str) -> None:
     CURSOR_UP_ONE = '\x1b[1A'
     ERASE_LINE = '\x1b[2K'
@@ -249,12 +264,11 @@ def main_game_loop():
     presentation = next(main_loop)
     while True:
         print_board(presentation)
-        winner = board.determine_winner()
-        if isinstance(winner, (Naught, Cross)):
-            print(f'{winner.to_string()} wins!')
-            exit(0)
-        raw_command = input()
-        presentation = main_loop.send(TicTacToeCommand.parse(raw_command))
+        presentation = main_loop.send(
+            TicTacToeCommand.parse(
+                input()
+            )
+        )
 
 
 if __name__ == '__main__':
