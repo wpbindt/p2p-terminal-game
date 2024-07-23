@@ -51,6 +51,7 @@ class Game(ABC, Generic[CommandType]):
 class TicTacToeBoard(Game):
     def __init__(self) -> None:
         self._board = [[Empty() for _ in range(3)] for _ in range(3)]
+        self._done = False
 
     @property
     def _rows(self) -> Iterable[list[Tile]]:
@@ -85,6 +86,8 @@ class TicTacToeBoard(Game):
         return None
 
     def mark_tile(self, command: TicTacToeCommand) -> None:
+        if self._done:
+            return
         self._board[command.x][command.y] = command.tile
 
     def _determine_triple_winner(self, triple: tuple[Tile, Tile, Tile]) -> Tile:
@@ -102,6 +105,8 @@ class TicTacToeBoard(Game):
         while True:
             command = yield str(self)
             self.mark_tile(command)
+            if isinstance(self.determine_winner(), (Naught, Cross)):
+                self._done = True
 
 
 def test_determine_winner_on_empty_board():
@@ -135,7 +140,21 @@ def test_determine_winner_when_top_row_is_naughts() -> None:
 
     assert board.determine_winner() == Naught()
 
+
+def test_no_more_moves_after_winner_determined() -> None:
+    board = TestAdapter(TicTacToeBoard())
+
+    board.mark_tile(0, 0, Naught())
+    board.mark_tile(1, 0, Naught())
+    board.mark_tile(2, 0, Naught())
+
+    before_extra_move = str(board)
+    board.mark_tile(2, 1, Naught())
+    after_extra_move = str(board)
+
+    assert before_extra_move == after_extra_move
     
+
 def test_determine_winner_when_top_row_is_not_naughts_two_tile() -> None:
     board = TestAdapter(TicTacToeBoard())
 
