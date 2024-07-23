@@ -48,7 +48,7 @@ class Game(ABC, Generic[CommandType]):
         pass
 
 
-class TicTacToeBoard:
+class TicTacToeBoard(Game):
     def __init__(self) -> None:
         self._board = [[Empty() for _ in range(3)] for _ in range(3)]
 
@@ -98,6 +98,11 @@ class TicTacToeBoard:
             for row in self._rows
         )
 
+    def main_loop(self) -> Generator[str, CommandType, None]:
+        while True:
+            command = yield str(self)
+            self.mark_tile(command)
+
 
 def test_determine_winner_on_empty_board():
     board = TestAdapter(TicTacToeBoard())
@@ -108,9 +113,11 @@ def test_determine_winner_on_empty_board():
 class TestAdapter:
     def __init__(self, board: TicTacToeBoard) -> None:
         self._board = board
+        self._main_loop = board.main_loop()
+        next(self._main_loop)
 
     def mark_tile(self, x: int, y: int, tile: Naught | Cross) -> None:
-        self._board.mark_tile(TicTacToeCommand(tile=tile, x=x, y=y))
+        self._main_loop.send(TicTacToeCommand(tile=tile, x=x, y=y))
 
     def determine_winner(self) -> Naught | Cross | None:
         return self._board.determine_winner()
