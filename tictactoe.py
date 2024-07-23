@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Iterable, Generic, TypeVar, Generator
 from dataclasses import dataclass
@@ -25,6 +27,14 @@ class TicTacToeCommand:
     tile: Naught | Cross
     x: int
     y: int
+
+    @classmethod
+    def parse(cls, raw: str) -> TicTacToeCommand:
+        return TicTacToeCommand(
+            x=int(raw[0]),
+            y=int(raw[1]),
+            tile=Cross() if raw[2] == 'x' else Naught(),
+        )
 
 
 CommandType = TypeVar('CommandType')
@@ -199,9 +209,12 @@ def print_board(board: TicTacToeBoard) -> None:
     print(board)
 
 
+def test_parse_command() -> None:
+    assert TicTacToeCommand.parse('12x') == TicTacToeCommand(tile=Cross(), x=1, y=2)
+
 
 def main_game_loop():
-    board = TestAdapter(TicTacToeBoard())
+    board = TicTacToeBoard()
     print('\n')
     print('\n')
     while True:
@@ -210,9 +223,8 @@ def main_game_loop():
         if isinstance(winner, (Naught, Cross)):
             print(f'{winner.to_string()} wins!')
             exit(0)
-        command = input()  # xy(tile)
-        tile = Cross() if command[2] == 'x' else Naught()
-        board.mark_tile(int(command[0]), int(command[1]), tile)
+        raw_command = input()
+        board.mark_tile(TicTacToeCommand.parse(raw_command))
 
 
 if __name__ == '__main__':
