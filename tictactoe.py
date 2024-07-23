@@ -77,10 +77,13 @@ class TicTacToeBoard(Game):
         yield from self._diagonals
 
     def determine_winner(self) -> Naught | Cross | None:
+        if self._winner is not None:
+            return self._winner
         for triple in self._triples:
             triple_winner = self._determine_triple_winner(triple)
             if isinstance(triple_winner, Empty):
                 continue
+            self._winner = triple_winner
             return triple_winner
 
         return None
@@ -91,30 +94,25 @@ class TicTacToeBoard(Game):
         self._board[command.x][command.y] = command.tile
 
     def _determine_triple_winner(self, triple: tuple[Tile, Tile, Tile]) -> Tile:
-        if self._winner is not None:
-            return self._winner
         if len(set(triple)) == 1:
             return next(iter(triple))
         return Empty()
 
     def __str__(self) -> str:
-        board = '\n'.join(
+        lines = [
             ''.join(tile.to_string() for tile in row) 
             for row in self._rows
-        )
+        ]
         if self._winner is not None:
-            winner_line = f'\n{self._winner.to_string()} wins!'
-        else:
-            winner_line = ''
-        return board + winner_line
+            lines.append(f'\n{self._winner.to_string()} wins!')
+
+        return '\n'.join(lines)
 
     def main_loop(self) -> Generator[str, CommandType, None]:
         while True:
             command = yield str(self)
             self.mark_tile(command)
-            winner = self.determine_winner()
-            if isinstance(winner, (Naught, Cross)):
-                self._winner = winner
+            self.determine_winner()
 
 
 def test_determine_winner_on_empty_board():
