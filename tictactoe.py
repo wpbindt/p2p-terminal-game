@@ -1,4 +1,5 @@
-from typing import Iterable
+from abc import ABC, abstractmethod
+from typing import Iterable, Generic, TypeVar, Generator
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -19,8 +20,22 @@ class Empty:
         return '.'
 
 
+@dataclass(frozen=True)
+class TicTacToeCommand:
+    tile: Naught | Cross
+    x: int
+    y: int
+
+
+CommandType = TypeVar('CommandType')
 
 Tile = Naught | Cross | Empty
+
+
+class Game(ABC, Generic[CommandType]):
+    @abstractmethod
+    def main_loop(self) -> Generator[str, CommandType, None]:
+        pass
 
 
 class TicTacToeBoard:
@@ -59,8 +74,8 @@ class TicTacToeBoard:
 
         return None
 
-    def mark_tile(self, x: int, y: int, tile: Naught | Cross) -> None:
-        self._board[x][y] = tile
+    def mark_tile(self, command: TicTacToeCommand) -> None:
+        self._board[command.x][command.y] = command.tile
 
     def _determine_triple_winner(self, triple: tuple[Tile, Tile, Tile]) -> Tile:
         if len(set(triple)) == 1:
@@ -75,13 +90,27 @@ class TicTacToeBoard:
 
 
 def test_determine_winner_on_empty_board():
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     assert board.determine_winner() is None
 
 
+class TestAdapter:
+    def __init__(self, board: TicTacToeBoard) -> None:
+        self._board = board
+
+    def mark_tile(self, x: int, y: int, tile: Naught | Cross) -> None:
+        self._board.mark_tile(TicTacToeCommand(tile=tile, x=x, y=y))
+
+    def determine_winner(self) -> Naught | Cross | None:
+        return self._board.determine_winner()
+
+    def __str__(self) -> str:
+        return str(self._board)
+
+
 def test_determine_winner_when_top_row_is_naughts() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 0, Naught())
     board.mark_tile(1, 0, Naught())
@@ -91,7 +120,7 @@ def test_determine_winner_when_top_row_is_naughts() -> None:
 
     
 def test_determine_winner_when_top_row_is_not_naughts_two_tile() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 0, Naught())
     board.mark_tile(1, 0, Naught())
@@ -100,7 +129,7 @@ def test_determine_winner_when_top_row_is_not_naughts_two_tile() -> None:
 
 
 def test_determine_winner_when_top_row_is_not_naughts() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 0, Naught())
     board.mark_tile(1, 0, Naught())
@@ -110,7 +139,7 @@ def test_determine_winner_when_top_row_is_not_naughts() -> None:
 
 
 def test_determine_winner_when_first_column_is_naughts() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 1, Naught())
     board.mark_tile(0, 2, Naught())
@@ -120,7 +149,7 @@ def test_determine_winner_when_first_column_is_naughts() -> None:
 
 
 def test_determine_winner_for_diagonal_crosses() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 0, Cross())
     board.mark_tile(2, 2, Cross())
@@ -130,7 +159,7 @@ def test_determine_winner_for_diagonal_crosses() -> None:
 
 
 def test_determine_winner_for_diagonal() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 0, Naught())
     board.mark_tile(2, 2, Naught())
@@ -139,7 +168,7 @@ def test_determine_winner_for_diagonal() -> None:
     assert board.determine_winner() == Naught()
 
 def test_determine_winner_for_anti_diagonal() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
 
     board.mark_tile(0, 2, Naught())
     board.mark_tile(2, 0, Naught())
@@ -149,12 +178,12 @@ def test_determine_winner_for_anti_diagonal() -> None:
 
 
 def test_that_the_board_prints_nicely() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
     assert str(board) == '\n'.join('...')
 
 
 def test_that_the_board_prints_nicely() -> None:
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
     board.mark_tile(0, 0, Naught())
     board.mark_tile(1, 0, Cross())
     board.mark_tile(1, 1, Naught())
@@ -170,8 +199,9 @@ def print_board(board: TicTacToeBoard) -> None:
     print(board)
 
 
+
 def main_game_loop():
-    board = TicTacToeBoard()
+    board = TestAdapter(TicTacToeBoard())
     print('\n')
     print('\n')
     while True:
