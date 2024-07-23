@@ -100,9 +100,7 @@ class TicTacToeBoard(Game):
 
     def main_loop(self) -> Generator[str, CommandType, None]:
         while True:
-            print('loop')
             command = yield str(self)
-            print(f'{command=}')
             self.mark_tile(command)
 
 
