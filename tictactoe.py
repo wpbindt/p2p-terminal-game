@@ -100,7 +100,9 @@ class TicTacToeBoard(Game):
 
     def main_loop(self) -> Generator[str, CommandType, None]:
         while True:
+            print('loop')
             command = yield str(self)
+            print(f'{command=}')
             self.mark_tile(command)
 
 
@@ -206,9 +208,11 @@ def test_that_the_board_prints_nicely() -> None:
     board.mark_tile(1, 1, Naught())
     assert str(board) == 'ox.\n.o.\n...'
 
-def print_board(board: TicTacToeBoard) -> None:
+def print_board(board: str) -> None:
     CURSOR_UP_ONE = '\x1b[1A'
     ERASE_LINE = '\x1b[2K'
+    print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
+    print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
     print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
     print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
     print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
@@ -222,16 +226,18 @@ def test_parse_command() -> None:
 
 def main_game_loop():
     board = TicTacToeBoard()
+    main_loop = board.main_loop()
     print('\n')
     print('\n')
+    presentation = next(main_loop)
     while True:
-        print_board(board)
+        print_board(presentation)
         winner = board.determine_winner()
         if isinstance(winner, (Naught, Cross)):
             print(f'{winner.to_string()} wins!')
             exit(0)
         raw_command = input()
-        board.mark_tile(TicTacToeCommand.parse(raw_command))
+        presentation = main_loop.send(TicTacToeCommand.parse(raw_command))
 
 
 if __name__ == '__main__':
