@@ -50,7 +50,7 @@ class Game(ABC, Generic[CommandType]):
 
 class TicTacToeBoard(Game):
     def __init__(self) -> None:
-        self._board = [[Empty() for _ in range(3)] for _ in range(3)]
+        self._board: list[list[Tile]] = [[Empty() for _ in range(3)] for _ in range(3)]
         self._winner = None
 
     @property
@@ -71,7 +71,7 @@ class TicTacToeBoard(Game):
         yield [self._board[2 - x][x] for x in range(len(self._board))]
 
     @property
-    def _triples(self) -> Iterable[list[Tile]]:
+    def _triples(self) -> Iterable[tuple[Tile, Tile, Tile]]:
         yield from self._columns
         yield from self._rows
         yield from self._diagonals
@@ -209,6 +209,7 @@ def test_determine_winner_for_diagonal() -> None:
 
     assert board.determine_winner() == Naught()
 
+
 def test_determine_winner_for_anti_diagonal() -> None:
     board = TestAdapter(TicTacToeBoard())
 
@@ -219,9 +220,9 @@ def test_determine_winner_for_anti_diagonal() -> None:
     assert board.determine_winner() == Naught()
 
 
-def test_that_the_board_prints_nicely() -> None:
+def test_that_the_board_prints_nicely_when_empty() -> None:
     board = TestAdapter(TicTacToeBoard())
-    assert str(board) == '\n'.join('...')
+    assert str(board) == '\n'.join(3 * ['...'])
 
 
 def test_that_the_board_prints_nicely() -> None:
@@ -231,12 +232,14 @@ def test_that_the_board_prints_nicely() -> None:
     board.mark_tile(1, 1, Naught())
     assert str(board) == 'ox.\n.o.\n...'
 
-def test_that_the_board_prints_nicely() -> None:
+
+def test_that_the_board_prints_nicely_when_a_winner_determined() -> None:
     board = TestAdapter(TicTacToeBoard())
     board.mark_tile(1, 0, Naught())
     board.mark_tile(1, 2, Naught())
     board.mark_tile(1, 1, Naught())
     assert 'o wins!' in str(board)
+
 
 def print_board(board: str) -> None:
     CURSOR_UP_ONE = '\x1b[1A'
@@ -271,4 +274,3 @@ def main_game_loop():
 
 if __name__ == '__main__':
     main_game_loop()
-
