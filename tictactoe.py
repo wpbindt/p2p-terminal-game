@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import auto, Enum
 from typing import Iterable, Generator
-from dataclasses import dataclass
 
-from game import Game, CommandType, run_game
+from game import Game, run_game
 
 
 @dataclass(frozen=True)
@@ -57,18 +57,33 @@ def parse_tic_tac_toe_command(raw: str) -> TicTacToeCommand:
     )
 
 
-TicTacToeCommand = PlaceTile
+TicTacToeCommand = PlaceTile | MovePlayer | PutTile
 
 
 Tile = Naught | Cross | Empty
+
+
+@dataclass
+class Coordinate:
+    x: int
+    y: int
+
+    def move(self, direction: Direction) -> None:
+        if direction == Direction.UP:
+            self.y -= 1
+        elif direction == Direction.DOWN:
+            self.y += 1
+        elif direction == Direction.LEFT:
+            self.x -= 1
+        else:
+            self.x += 1
 
 
 class TicTacToeBoard(Game):
     def __init__(self) -> None:
         self._board: list[list[Tile]] = [[Empty() for _ in range(3)] for _ in range(3)]
         self._winner = None
-        self._player_x = 0
-        self._player_y = 0
+        self._player = Coordinate(x=0, y=0)
 
     @property
     def _rows(self) -> Iterable[list[Tile]]:
@@ -141,17 +156,10 @@ class TicTacToeBoard(Game):
             self.determine_winner()
 
     def _put_tile(self, command: PutTile) -> None:
-        self.mark_tile(PlaceTile(tile=command.tile, x=self._player_x, y=self._player_y))
+        self.mark_tile(PlaceTile(tile=command.tile, x=self._player.x, y=self._player.y))
 
     def _move_player(self, command: MovePlayer) -> None:
-        if command.direction == Direction.UP:
-            self._player_y -= 1
-        if command.direction == Direction.DOWN:
-            self._player_y += 1
-        if command.direction == Direction.LEFT:
-            self._player_x -= 1
-        if command.direction == Direction.RIGHT:
-            self._player_x += 1
+        self._player.move(command.direction)
 
 
 def print_board(board: str) -> None:
