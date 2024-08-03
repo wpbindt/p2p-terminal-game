@@ -128,5 +128,5 @@ if __name__ == '__main__':
     run_game(
         game=TicTacToeBoard(),
         print_game=print_board,
-        command_parser=TicTacToeCommand.parse,
+        command_parser=parse_tic_tac_toe_command,
     )
