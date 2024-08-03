@@ -1,4 +1,4 @@
-from tictactoe import TicTacToeBoard, Naught, Cross, TicTacToeCommand
+from tictactoe import TicTacToeBoard, Naught, Cross, parse_tic_tac_toe_command, PlaceTile
 
 
 def test_determine_winner_on_empty_board():
@@ -14,7 +14,7 @@ class TestAdapter:
         next(self._main_loop)
 
     def mark_tile(self, x: int, y: int, tile: Naught | Cross) -> None:
-        self._main_loop.send(TicTacToeCommand(tile=tile, x=x, y=y))
+        self._main_loop.send(PlaceTile(tile=tile, x=x, y=y))
 
     def determine_winner(self) -> Naught | Cross | None:
         return self._board.determine_winner()
@@ -128,4 +128,4 @@ def test_that_the_board_prints_nicely_when_a_winner_determined() -> None:
 
 
 def test_parse_command() -> None:
-    assert TicTacToeCommand.parse('12x') == TicTacToeCommand(tile=Cross(), x=1, y=2)
+    assert parse_tic_tac_toe_command('12x') == PlaceTile(tile=Cross(), x=1, y=2)

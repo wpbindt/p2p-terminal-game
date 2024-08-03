@@ -25,18 +25,21 @@ class Empty:
 
 
 @dataclass(frozen=True)
-class TicTacToeCommand:
+class PlaceTile:
     tile: Naught | Cross
     x: int
     y: int
 
-    @classmethod
-    def parse(cls, raw: str) -> TicTacToeCommand:
-        return TicTacToeCommand(
-            x=int(raw[0]),
-            y=int(raw[1]),
-            tile=Cross() if raw[2] == 'x' else Naught(),
-        )
+
+def parse_tic_tac_toe_command(raw: str) -> TicTacToeCommand:
+    return PlaceTile(
+        x=int(raw[0]),
+        y=int(raw[1]),
+        tile=Cross() if raw[2] == 'x' else Naught(),
+    )
+
+
+TicTacToeCommand = PlaceTile
 
 
 Tile = Naught | Cross | Empty
