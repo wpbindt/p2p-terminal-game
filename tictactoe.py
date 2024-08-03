@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import auto, Enum
 from typing import Iterable, Generator
 from dataclasses import dataclass
 
@@ -31,6 +32,23 @@ class PlaceTile:
     y: int
 
 
+class Direction(Enum):
+    UP = auto()
+    DOWN = auto()
+    LEFT = auto()
+    RIGHT = auto()
+
+
+@dataclass(frozen=True)
+class MovePlayer:
+    direction: Direction
+
+
+@dataclass(frozen=True)
+class PutTile:
+    tile: Naught | Cross
+
+
 def parse_tic_tac_toe_command(raw: str) -> TicTacToeCommand:
     return PlaceTile(
         x=int(raw[0]),
@@ -49,6 +67,8 @@ class TicTacToeBoard(Game):
     def __init__(self) -> None:
         self._board: list[list[Tile]] = [[Empty() for _ in range(3)] for _ in range(3)]
         self._winner = None
+        self._player_x = 0
+        self._player_y = 0
 
     @property
     def _rows(self) -> Iterable[list[Tile]]:
@@ -90,7 +110,10 @@ class TicTacToeBoard(Game):
             return
         self._board[command.x][command.y] = command.tile
 
-    def _determine_triple_winner(self, triple: tuple[Tile, Tile, Tile]) -> Tile:
+    def _determine_triple_winner(
+        self,
+        triple: tuple[Tile, Tile, Tile],
+    ) -> Tile:
         if len(set(triple)) == 1:
             return next(iter(triple))
         return Empty()
@@ -105,11 +128,30 @@ class TicTacToeBoard(Game):
 
         return '\n'.join(lines)
 
-    def main_loop(self) -> Generator[str, CommandType, None]:
+    def main_loop(self) -> Generator[str, TicTacToeCommand, None]:
         while True:
             command = yield str(self)
-            self.mark_tile(command)
+            if isinstance(command, MovePlayer):
+                self._move_player(command)
+            if isinstance(command, PutTile):
+                self._put_tile(command)
+            if isinstance(command, PlaceTile):
+                self.mark_tile(command)
+
             self.determine_winner()
+
+    def _put_tile(self, command: PutTile) -> None:
+        self.mark_tile(PlaceTile(tile=command.tile, x=self._player_x, y=self._player_y))
+
+    def _move_player(self, command: MovePlayer) -> None:
+        if command.direction == Direction.UP:
+            self._player_y -= 1
+        if command.direction == Direction.DOWN:
+            self._player_y += 1
+        if command.direction == Direction.LEFT:
+            self._player_x -= 1
+        if command.direction == Direction.RIGHT:
+            self._player_x += 1
 
 
 def print_board(board: str) -> None:
