@@ -13,11 +13,10 @@ if __name__ == '__main__':
         game=game,
     )
     with create_termios_io(command_parser=parse_termios_command) as termios_io:
-        reader, output = termios_io
         controller = Controller(
-            input_reader=reader,
+            input_reader=termios_io.input_reader,
             command_queue=command_queue,
         )
-        game_runner.subscribe(output)
+        game_runner.subscribe(termios_io.output)
         game_runner.add_controller(controller)
         game_runner.run()
