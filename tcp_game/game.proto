@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package game;
+
+message Command {
+    bytes command = 1;
+}
+
+message DrawingInstructions {
+    repeated DrawingInstruction instructions = 1;
+}
+
+message DrawingInstruction {
+    int32 x = 1;
+    int32 y = 2;
+    string to_draw = 3;
+}
+
+message DrawEntireScreenRequest {}
