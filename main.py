@@ -1,9 +1,10 @@
 from queue import Queue
 
 from termios_input_reader import TermiosInputReader
+from termios_output import TermiosOutput
 from tictactoe import parse_termios_command, TicTacToeBoard
-from try_something import CommandQueue, Controller, TicTacToeAdapter, GameRunner, TerminalOutput
-
+from try_something import CommandQueue, Controller, GameRunner, TerminalOutput
+from tic_tac_toe_adapter import TicTacToeAdapter
 
 if __name__ == '__main__':
     command_queue = CommandQueue(commands=Queue(maxsize=100))
@@ -19,7 +20,7 @@ if __name__ == '__main__':
         command_queue=command_queue,
         game=game,
     )
-    output = TerminalOutput()
+    output = TermiosOutput()
     game_runner.subscribe(output)
     game_runner.add_controller(controller)
     with reader:

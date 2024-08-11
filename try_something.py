@@ -5,7 +5,6 @@ from queue import Queue
 from typing import Callable, NoReturn, Generic, TypeVar
 
 from game import CommandType
-from tictactoe import TicTacToeBoard, TicTacToeCommand
 
 
 class Command:
@@ -72,19 +71,6 @@ class Game(ABC, Generic[CommandType, DrawInstructionType]):
     @abstractmethod
     def draw_full_screen(self) -> DrawInstructionType:
         pass
-
-
-class TicTacToeAdapter(Game[TicTacToeCommand, str]):
-    def __init__(self, board: TicTacToeBoard) -> None:
-        self._loop = board.main_loop()
-        self._current_presentation = next(self._loop)
-
-    def handle_command(self, command: TicTacToeCommand) -> str:
-        self._current_presentation = self._loop.send(command)
-        return self._current_presentation
-
-    def draw_full_screen(self) -> str:
-        return self._current_presentation
 
 
 @dataclass(frozen=True)
