@@ -107,23 +107,3 @@ class GameRunner:
         thread = threading.Thread(target=controller.run)
         thread.start()
         self.controller_threads.append(thread)
-
-
-if __name__ == '__main__':
-    command_queue = CommandQueue(commands=Queue(maxsize=100))
-    reader = LineInputReader(
-        command_parser=parse_tic_tac_toe_command
-    )
-    controller = Controller(
-        input_reader=reader,
-        command_queue=command_queue,
-    )
-    game = TicTacToeAdapter(TicTacToeBoard())
-    game_runner = GameRunner(
-        command_queue=command_queue,
-        game=game,
-    )
-    output = TerminalOutput()
-    game_runner.subscribe(output)
-    game_runner.add_controller(controller)
-    game_runner.run()

@@ -57,6 +57,18 @@ def parse_tic_tac_toe_command(raw: str) -> TicTacToeCommand:
     )
 
 
+def parse_termios_command(raw: str) -> TicTacToeCommand:
+    commands = {
+        'j': MovePlayer(Direction.DOWN),
+        'k': MovePlayer(Direction.UP),
+        'h': MovePlayer(Direction.LEFT),
+        'l': MovePlayer(Direction.RIGHT),
+        'x': PutTile(Cross()),
+        'o': PutTile(Naught()),
+    }
+    return commands[raw]
+
+
 TicTacToeCommand = PlaceTile | MovePlayer | PutTile
 
 
