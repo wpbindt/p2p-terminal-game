@@ -2,7 +2,7 @@ import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from queue import Queue
-from typing import Callable, NoReturn, Generic
+from typing import Callable, NoReturn, Generic, TypeVar
 
 from game import CommandType
 from tictactoe import TicTacToeBoard, TicTacToeCommand
@@ -49,49 +49,50 @@ class Controller(Generic[CommandType]):
             self.command_queue.put(command)
 
 
+DrawInstructionType = TypeVar('DrawInstructionType')
 DrawInstruction = str
 
 
-class Output(ABC):
+class Output(ABC, Generic[DrawInstructionType]):
     @abstractmethod
-    def draw(self, draw_instruction: DrawInstruction) -> None:
+    def draw(self, draw_instruction: DrawInstructionType) -> None:
         pass
 
 
 class TerminalOutput(Output):
-    def draw(self, draw_instruction: DrawInstruction) -> None:
+    def draw(self, draw_instruction: DrawInstructionType) -> None:
         print(draw_instruction)
 
 
-class Game(ABC, Generic[CommandType]):
+class Game(ABC, Generic[CommandType, DrawInstructionType]):
     @abstractmethod
-    def handle_command(self, command: CommandType) -> DrawInstruction:
+    def handle_command(self, command: CommandType) -> DrawInstructionType:
         pass
 
     @abstractmethod
-    def draw_full_screen(self) -> DrawInstruction:
+    def draw_full_screen(self) -> DrawInstructionType:
         pass
 
 
-class TicTacToeAdapter(Game[TicTacToeCommand]):
+class TicTacToeAdapter(Game[TicTacToeCommand, str]):
     def __init__(self, board: TicTacToeBoard) -> None:
         self._loop = board.main_loop()
         self._current_presentation = next(self._loop)
 
-    def handle_command(self, command: TicTacToeCommand) -> DrawInstruction:
+    def handle_command(self, command: TicTacToeCommand) -> str:
         self._current_presentation = self._loop.send(command)
         return self._current_presentation
 
-    def draw_full_screen(self) -> DrawInstruction:
+    def draw_full_screen(self) -> str:
         return self._current_presentation
 
 
 @dataclass(frozen=True)
-class GameRunner(Generic[CommandType]):
+class GameRunner(Generic[CommandType, DrawInstructionType]):
     command_queue: CommandQueue[CommandType]
-    game: Game[CommandType]
+    game: Game[CommandType, DrawInstructionType]
     controller_threads: list[threading.Thread] = field(default_factory=list)
-    subscribers: list[Output] = field(default_factory=list)
+    subscribers: list[Output[DrawInstructionType]] = field(default_factory=list)
 
     def run(self) -> NoReturn:
         while True:
@@ -100,7 +101,7 @@ class GameRunner(Generic[CommandType]):
             for subscriber in self.subscribers:
                 subscriber.draw(draw_instruction)
 
-    def subscribe(self, subscriber: Output) -> None:
+    def subscribe(self, subscriber: Output[DrawInstructionType]) -> None:
         self.subscribers.append(subscriber)
         subscriber.draw(self.game.draw_full_screen())
 
