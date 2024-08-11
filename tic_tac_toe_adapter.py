@@ -1,4 +1,4 @@
-from termios_output import TermiosDrawInstruction, TermiosSymbol
+from termios_io.termios_output import TermiosDrawInstruction, TermiosSymbol
 from tictactoe import TicTacToeCommand, TicTacToeBoard
 from try_something import Game
 

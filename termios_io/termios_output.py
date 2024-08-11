@@ -26,9 +26,5 @@ class TermiosDrawInstruction:
 
 
 class TermiosOutput(Output[TermiosDrawInstruction]):
-    def __init__(self):
-        sys.stdout.write('\033[2J')
-        sys.stdout.flush()
-
     def draw(self, draw_instruction: TermiosDrawInstruction) -> None:
         draw_instruction.draw()
