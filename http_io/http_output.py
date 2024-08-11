@@ -9,7 +9,7 @@ class HttpOutput(Output):
     def __init__(
         self,
         url: str,
-        serialize_draw_instruction: Callable[[DrawInstructionType], str],
+        serialize_draw_instruction: Callable[[DrawInstructionType], list],
     ) -> None:
         self._url = url
         self._serialize_draw_instruction = serialize_draw_instruction
