@@ -2,9 +2,10 @@ import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from queue import Queue
-from typing import Callable, NoReturn
+from typing import Callable, NoReturn, Generic
 
-from tictactoe import TicTacToeBoard, parse_tic_tac_toe_command
+from game import CommandType
+from tictactoe import TicTacToeBoard, TicTacToeCommand
 
 
 class Command:
@@ -12,35 +13,35 @@ class Command:
 
 
 @dataclass(frozen=True)
-class CommandQueue:
-    commands: Queue[Command]
+class CommandQueue(Generic[CommandType]):
+    commands: Queue[CommandType]
 
-    def put(self, command: Command) -> None:
+    def put(self, command: CommandType) -> None:
         self.commands.put_nowait(command)
 
-    def get(self) -> Command:
+    def get(self) -> CommandType:
         return self.commands.get(block=True)
 
 
-class InputReader(ABC):
+class InputReader(ABC, Generic[CommandType]):
     @abstractmethod
-    def get_input(self) -> Command:
+    def get_input(self) -> CommandType:
         pass
 
 
 @dataclass(frozen=True)
-class LineInputReader(InputReader):
-    command_parser: Callable[[str], Command]
+class LineInputReader(InputReader[CommandType], Generic[CommandType]):
+    command_parser: Callable[[str], CommandType]
 
-    def get_input(self) -> Command:
+    def get_input(self) -> CommandType:
         raw = input()
         return self.command_parser(raw)
 
 
 @dataclass(frozen=True)
-class Controller:
-    command_queue: CommandQueue
-    input_reader: InputReader
+class Controller(Generic[CommandType]):
+    command_queue: CommandQueue[CommandType]
+    input_reader: InputReader[CommandType]
 
     def run(self) -> None:
         while True:
@@ -62,9 +63,9 @@ class TerminalOutput(Output):
         print(draw_instruction)
 
 
-class Game(ABC):
+class Game(ABC, Generic[CommandType]):
     @abstractmethod
-    def handle_command(self, command: Command) -> DrawInstruction:
+    def handle_command(self, command: CommandType) -> DrawInstruction:
         pass
 
     @abstractmethod
@@ -72,12 +73,12 @@ class Game(ABC):
         pass
 
 
-class TicTacToeAdapter(Game):
+class TicTacToeAdapter(Game[TicTacToeCommand]):
     def __init__(self, board: TicTacToeBoard) -> None:
         self._loop = board.main_loop()
         self._current_presentation = next(self._loop)
 
-    def handle_command(self, command: Command) -> DrawInstruction:
+    def handle_command(self, command: TicTacToeCommand) -> DrawInstruction:
         self._current_presentation = self._loop.send(command)
         return self._current_presentation
 
@@ -86,9 +87,9 @@ class TicTacToeAdapter(Game):
 
 
 @dataclass(frozen=True)
-class GameRunner:
-    command_queue: CommandQueue
-    game: Game
+class GameRunner(Generic[CommandType]):
+    command_queue: CommandQueue[CommandType]
+    game: Game[CommandType]
     controller_threads: list[threading.Thread] = field(default_factory=list)
     subscribers: list[Output] = field(default_factory=list)
 
@@ -103,7 +104,7 @@ class GameRunner:
         self.subscribers.append(subscriber)
         subscriber.draw(self.game.draw_full_screen())
 
-    def add_controller(self, controller: Controller) -> None:
+    def add_controller(self, controller: Controller[CommandType]) -> None:
         thread = threading.Thread(target=controller.run)
         thread.start()
         self.controller_threads.append(thread)
